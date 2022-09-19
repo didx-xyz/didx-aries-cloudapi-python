@@ -11,6 +11,9 @@ ingress:
   enabled: false
   tls_enabled: false
 
+# The list of arguments to pass to the Pods entrypoint
+args: ["--plugin plugins/acapy_wallet_groups_plugin"]
+
 service:
   # if set, will run Pods on Node Network
   hostNetwork: false

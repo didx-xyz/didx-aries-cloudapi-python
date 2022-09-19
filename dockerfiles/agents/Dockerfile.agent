@@ -16,6 +16,9 @@ RUN chmod +x ./startup.sh
 # COPY scripts/ngrok-wait.sh wait.sh
 # RUN chmod +x ./wait.sh
 
+# Custom Plugins
+COPY --from=plugins acapy_wallet_groups_plugin plugins/acapy_wallet_groups_plugin
+
 USER $user
 
-CMD ./startup.sh
+ENTRYPOINT [ "./startup.sh" ]
