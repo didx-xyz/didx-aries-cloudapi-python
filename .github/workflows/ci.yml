@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: 
       - main
-      - master
+      - development
 
 env:
   IMAGE_TAG: ${{ github.sha }}
@@ -52,3 +52,4 @@ jobs:
           file: ${{ matrix.file }}
           push: false
           tags: ${{ matrix.registry_image }}:${{ env.IMAGE_TAG }}
+          build-contexts: plugins=https://github.com/didx-xyz/acapy-wallet-groups-plugin.git

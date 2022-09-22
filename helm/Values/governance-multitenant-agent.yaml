@@ -8,18 +8,27 @@ image:
   tag: "master"
 
 ingress:
-  enabled: false
-  tls_enabled: false
+  enabled: true
+  tls_enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+  hosts:
+  - host: "mt-agent.didx.co.za"
+    paths:
+    - /
+
+# The list of arguments to pass to the Pods entrypoint
+args: ["--plugin plugins/acapy_wallet_groups_plugin"]
 
 service:
   # if set, will run Pods on Node Network
   hostNetwork: false
-  port: 4021
-  containerPort: 3021
+  port: 4020
+  containerPort: 3020
 
 addPorts:
-  - port: 4020
-    containerPort: 3020
+  - port: 4021
+    containerPort: 3021
     protocol: TCP
 
 httpProbes: {}

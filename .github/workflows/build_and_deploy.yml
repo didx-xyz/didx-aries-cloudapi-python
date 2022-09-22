@@ -4,14 +4,14 @@ on:
   push:
     branches: 
       - main
-      - master
+      - development
     # Publish semver tags as releases.
     tags: 
       - v*.*.*
   pull_request_review:
     branches: 
       - main
-      - master
+      - development
     types:
       - submitted
 
@@ -24,7 +24,7 @@ env:
 
 jobs:
   docker_build_and_publish:
-    if: github.event.review.state == 'approved' || github.ref_name	== 'master' || github.ref_name	== 'main'
+    if: github.event.review.state == 'approved' || github.ref_name	== 'development' || github.ref_name	== 'main'
     
     strategy:
       matrix:
@@ -77,11 +77,12 @@ jobs:
           file: ${{ matrix.file }}
           push: true
           tags: ${{ matrix.registry_image }}:${{ env.IMAGE_TAG }}
+          build-contexts: plugins=https://github.com/didx-xyz/acapy-wallet-groups-plugin.git
 
 
   Release:
     needs: docker_build_and_publish
-    if: github.ref_name	== 'master' || github.ref_name	== 'main'
+    if: github.ref_name	== 'development' || github.ref_name	== 'main' || github.ref_name	== 'devops-updateci'
     
     strategy:
       matrix:
@@ -145,7 +146,6 @@ jobs:
           repository: didx-xyz/cloud_api_helm
           token: ${{ secrets.HELM_REPO_TOKEN }} # private access token here, for HTTPS clones
           path: helm/Chart
-
       -
         name: Deploy Helm Release
         run: helm -n app upgrade --install --atomic --timeout=300s "${{ matrix.project_name }}" ./helm/Chart/ -f "./helm/Values/${{ matrix.project_name }}.yaml" --set image.repository="${{ matrix.registry_image }}" --set image.tag="${IMAGE_TAG}"
