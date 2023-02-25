@@ -8,8 +8,15 @@ image:
   tag: "master"
 
 ingress:
-  enabled: false
-  tls_enabled: false
+  enabled: true
+  tls_enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+  hosts:
+  - host: mt-agent.didx.co.za
+    paths:
+    - path: /
+      port: 4020
 
 service:
   # if set, will run Pods on Node Network
