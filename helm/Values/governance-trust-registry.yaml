@@ -3,9 +3,9 @@ replicaCount: 1
 daemon: false
 
 image:
-  repository: "324190738845.dkr.ecr.af-south-1.amazonaws.com/trustregistry"
+  repository: "324190738845.dkr.ecr.af-south-1.amazonaws.com/governance-trust-registry"
   pullPolicy: Always
-  tag: "master"
+  tag: "baseline-04d67c5"
 
 ingress:
   enabled: false
