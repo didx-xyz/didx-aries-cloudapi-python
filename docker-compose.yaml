@@ -104,7 +104,7 @@ services:
     env_file:
       - environments/governance-multitenant/fastapi.default.env
   governance-webhooks-web:
-    image: ${ECR_REGISTRY}/governance-webhooks-web
+    image: ${ECR_REGISTRY}/governance-webhooks-web:${IMAGE_TAG:-latest}
     container_name: governance-webhooks-web
     build:
       context: .
@@ -174,7 +174,7 @@ services:
       - ledger-nodes
       - ledger-browser
   governance-multitenant-agent:
-    image: ${ECR_REGISTRY}/governance-multitenant-agent
+    image: ${ECR_REGISTRY}/governance-multitenant-agent:${IMAGE_TAG:-latest}
     container_name: governance-multitenant-agent
     build:
       context: .
@@ -217,7 +217,7 @@ services:
     depends_on:
       - ledger-nodes
   ledger-nodes:
-    image: ${ECR_REGISTRY}/ledger-nodes
+    image: ${ECR_REGISTRY}/ledger-nodes:${IMAGE_TAG:-latest}
     container_name: ledger-nodes
     build:
       context: https://github.com/didx-xyz/von-network.git

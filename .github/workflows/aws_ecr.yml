@@ -29,19 +29,23 @@ jobs:
       - name: Build, tag, and push image to Amazon ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          #ECR_REPOSITORY: cloud_api
-          IMAGE_TAG: development
-          #DOCKER_REGISTRY=324190738845.dkr.ecr.af-south-1.amazonaws.com/cloud_api
-          #DOCKER_REGISTRY=324190738845.dkr.ecr.af-south-1.amazonaws.com
 
         run: |
-          #docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          #docker push -a $ECR_REGISTRY/$ECR_REPOSITORY
-          #bash ./scripts/git_update.sh -v minor
           bash ./scripts/install_latest_docker-compose.sh
-          #bash /usr/local/bin/python -m pip install --upgrade pip
-          #bash ./scripts/create_ecr_repos.sh -v ${ECR_REGISTRY}
+
+          # TODO: check if repos already exist
           #bash create_ecr_repos.sh
-          
-          docker-compose build
-          docker-compose push
+          # TODO: standardised release management
+          # Stopgap logic to have tagged images
+
+          SHA_SHORT="$(git rev-parse --short HEAD)"
+          BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+
+          echo ${SHA_SHORT}
+          echo ${BRANCH}
+
+          for TAG in ${BRANCH} ${BRANCH}-${SHA_SHORT} ; do
+            export IMAGE_TAG=${TAG}
+            docker-compose build
+            docker-compose push
+          done
