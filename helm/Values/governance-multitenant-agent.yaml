@@ -52,7 +52,7 @@ env:
   ADMIN_URL: http://governance-multitenant-agent:4021
   ACAPY_OUTBOUND_TRANSPORT: http
   ACAPY_ADMIN: "[0.0.0.0,3021]"
-  ACAPY_ENDPOINT: http://governance-multitenant-agent:4020
+  ACAPY_ENDPOINT: https://mt-agent.didx.co.za
   ACAPY_WEBHOOK_URL: http://governance-webhooks-web:3010/multitenant
   # Tails server
   ACAPY_TAILS_SERVER_BASE_URL: http://tails-server:6543
@@ -68,9 +68,9 @@ env:
   ACAPY_GENESIS_URL: https://testnet.didx.co.za/genesis
   # Multi-tenant Configuration
   ACAPY_MULTITENANT: true
-  ACAPY_MULTITENANT_ADMIN: true
+  ACAPY_MULTITENANT_ADMIN: false
   ACAPY_PUBLIC_INVITES: true
-  AGENT_ENDPOINT: http://governance-multitenant-agent:4020
+  AGENT_ENDPOINT: https://mt-agent.didx.co.za
   # ## DO NOT CHANGE VARIABLES BELOW
   # ## Unless you know exactly what you are doing
   # ## Changes will probably break CloudAPI
@@ -86,7 +86,7 @@ env:
   ACAPY_AUTO_RESPOND_PRESENTATION_REQUEST: false
   ACAPY_AUTO_STORE_CREDENTIAL: true
   ACAPY_AUTO_VERIFY_PRESENTATION: true
-  ACAPY_PRESERVE_EXCHANGE_RECORDS: false
+  ACAPY_PRESERVE_EXCHANGE_RECORDS: true
   # Endorser
   ACAPY_ENDORSER_ROLE: author
   ACAPY_AUTO_REQUEST_ENDORSEMENT: true

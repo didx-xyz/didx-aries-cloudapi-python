@@ -52,7 +52,7 @@ env:
   ADMIN_URL: http://governance-ga-agent:3021
   ACAPY_OUTBOUND_TRANSPORT: http
   ACAPY_ADMIN: "[0.0.0.0,3021]"
-  ACAPY_ENDPOINT: http://governance-ga-agent:3020
+  ACAPY_ENDPOINT: https://ga-agent.didx.co.za
   ACAPY_WEBHOOK_URL: http://governance-webhooks-web:3010/governance
   # Tails server
   # Should be changed further
@@ -68,7 +68,7 @@ env:
   # Ledger
   ACAPY_GENESIS_URL: https://testnet.didx.co.za/genesis
   ACAPY_PUBLIC_INVITES: true
-  AGENT_ENDPOINT: http://governance-ga-agent:3020
+  AGENT_ENDPOINT: https://ga-agent.didx.co.za
   ACAPY_ENDORSER_ROLE: endorser
   # ## DO NOT CHANGE VARIABLES BELOW
   # ## Unless you know exactly what you are doing
