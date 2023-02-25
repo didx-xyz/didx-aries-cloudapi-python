@@ -34,7 +34,7 @@ nodeSelector:
   eks.amazonaws.com/nodegroup: application
 
 env:
-  REDIS_URL: redis://aries-default.gpip5x.0001.afs1.cache.amazonaws.com
+  REDIS_HOST: aries-default.gpip5x.0001.afs1.cache.amazonaws.com:6379
   ACAPY_WEBHOOK_PORT: 3010
   LOG_LEVEL: error
   OPENAPI_NAME: Webhooks
