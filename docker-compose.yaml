@@ -2,7 +2,7 @@ version: "3"
 
 services:
   governance-ga-web:
-    image: ${ECR_REGISTRY}/governance-ga-web
+    image: ${ECR_REGISTRY}/governance-ga-web:${IMAGE_TAG:-latest}
     container_name: governance-ga-web
     build:
       context: .
@@ -47,7 +47,7 @@ services:
   #     - ledger-nodes
   #     - ledger-browser
   governance-ga-agent:
-    image: ${ECR_REGISTRY}/governance-ga-agent
+    image: ${ECR_REGISTRY}/governance-ga-agent:${IMAGE_TAG:-latest}
     container_name: governance-ga-agent
     build:
       context: .
@@ -67,7 +67,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
   governance-trust-registry:
-    image: ${ECR_REGISTRY}/governance-trust-registry
+    image: ${ECR_REGISTRY}/governance-trust-registry:${IMAGE_TAG:-latest}
     container_name: governance-trust-registry
     build:
       context: .
@@ -83,7 +83,7 @@ services:
       - governance-multitenant
       - host
   governance-multitenant-web:
-    image: ${ECR_REGISTRY}/governance-multitenant-web
+    image: ${ECR_REGISTRY}/governance-multitenant-web:${IMAGE_TAG:-latest}
     container_name: governance-multitenant-web
     build:
       context: .
