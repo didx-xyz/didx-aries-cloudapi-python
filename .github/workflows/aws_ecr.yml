@@ -10,6 +10,9 @@ on:
   pull_request:
     branches:
       - "development"
+      - "feature/DIDX-121-dockerfile-cmd-and-entrypoint-config"
+  pull_request_review:
+    types: [submitted]
 
 jobs:
   build:
@@ -18,7 +21,7 @@ jobs:
 
     outputs:
       image_repository: ${{ steps.login-ecr.outputs.repository }}
-      image_tag: ${{ steps.meta.outputs.tags }}
+      image_version: ${{ steps.meta.outputs.version }}
 
     strategy:
       matrix:
@@ -90,7 +93,9 @@ jobs:
     name: Deploy to EKS
     needs: build
     runs-on: ubuntu-latest
-    if: (github.event_name == 'pull_request' && github.event.review.state == 'approved') || (github.event_name == 'push' && github.ref == 'refs/heads/development')
+    permissions:
+      id-token: write # This is required for requesting the JWT
+    # if: github.event.review.state == 'approved' || (github.event_name == 'push' && github.ref == 'refs/heads/development')
 
     strategy:
       matrix:
@@ -112,13 +117,14 @@ jobs:
           repository: didx-xyz/cloud_api_helm
           token: ${{ secrets.HELM_REPO_TOKEN }} # private access token here, for HTTPS clones
           path: helm/Chart
+          ref: CloudAPI-Environment-Variable-Changes
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_DEV_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_DEV_SECRET_ACCESS_KEY }}
           aws-region: af-south-1
+          role-to-assume: arn:aws:iam::402177810328:role/cicd
+          role-session-name: github-cicd
 
       - name: Install Helm
         uses: azure/setup-helm@v3
@@ -133,6 +139,7 @@ jobs:
         uses: tailscale/github-action@v1
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          version: 1.38.1
 
       - name: Update deployments
         run: |
@@ -142,7 +149,7 @@ jobs:
             --atomic \
             --timeout=300s \
             --set image.repository=${{ needs.build.outputs.image_repository }}/${{ matrix.project_name }} \
-            --set image.tag=${{ needs.build.outputs.image_tag }} \
+            --set image.tag=${{ needs.build.outputs.image_version }} \
             -f helm/Chart/values/dev/${{ matrix.project_name }}.yaml \
             -f helm/Chart/secrets/dev/${{ matrix.project_name }}.yaml \
-            ./helm/Chart
+            ./helm/Chart --dry-run
