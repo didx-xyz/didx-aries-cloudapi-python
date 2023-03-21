@@ -20,11 +20,21 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      image_repository: ${{ steps.login-ecr.outputs.repository }}
       image_version: ${{ steps.meta.outputs.version }}
 
     strategy:
       matrix:
+        image:
+          [
+            governance-ga-agent,
+            governance-trust-registry,
+            governance-multitenant-web,
+            governance-webhooks-web,
+            governance-multitenant-agent,
+            ledger-browser,
+            ledger-nodes,
+            governance-endorser,
+          ]
         include:
           - image: governance-ga-agent
             context: .
@@ -81,6 +91,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push Docker images
+        if: github.event.name != 'pull_request_review'
         uses: docker/build-push-action@v4
         with:
           context: ${{ matrix.context }}
@@ -95,19 +106,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting the JWT
-    # if: github.event.review.state == 'approved' || (github.event_name == 'push' && github.ref == 'refs/heads/development')
+    if: github.event.review.state == 'approved' || github.event_name == 'push'
 
-    strategy:
-      matrix:
-        project_name:
-          [
-            governance-ga-agent,
-            governance-multitenant-agent,
-            governance-multitenant-web,
-            governance-trust-registry,
-            governance-webhooks-web,
-            governance-endorser,
-          ]
+    env:
+      projects: |
+        governance-ga-agent
+        governance-multitenant-agent
+        governance-multitenant-web
+        governance-trust-registry
+        governance-webhooks-web
+        governance-endorser
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -128,28 +136,40 @@ jobs:
 
       - name: Install Helm
         uses: azure/setup-helm@v3
+        with:
+          version: latest
 
       - name: Install helm secrets plugin
         run: helm plugin install https://github.com/jkroepke/helm-secrets --version v4.4.2
 
+      - name: Setup Go
+        uses: actions/setup-go@v4
+
+      - name: Install sops
+        run: |
+          go install go.mozilla.org/sops/v3/cmd/sops@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
       - name: Update Kubeconfig
         run: aws eks update-kubeconfig --name cloudapi-dev
-      
+
       - name: Tailscale
-        uses: tailscale/github-action@v1
+        uses: tailscale/github-action@main
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
           version: 1.38.1
+          args: --advertise-tags=tag:cicd
 
       - name: Update deployments
         run: |
-          helm -n dev-cloudapi \
-            secrets upgrade ${{ matrix.project_name }} \
-            --install \
-            --atomic \
-            --timeout=300s \
-            --set image.repository=${{ needs.build.outputs.image_repository }}/${{ matrix.project_name }} \
-            --set image.tag=${{ needs.build.outputs.image_version }} \
-            -f helm/Chart/values/dev/${{ matrix.project_name }}.yaml \
-            -f helm/Chart/secrets/dev/${{ matrix.project_name }}.yaml \
-            ./helm/Chart --dry-run
+          for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
+            helm -n dev-cloudapi \
+              secrets upgrade "${project}" \
+              --install \
+              --atomic \
+              --timeout=300s \
+              --set image.tag=${{ needs.build.outputs.image_version }} \
+              -f ./helm/Chart/values/dev/${project}.yaml \
+              -f ./helm/Chart/secrets/dev/${project}.yaml \
+              ./helm/Chart
+          done
