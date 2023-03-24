@@ -46,6 +46,10 @@ extraSecretNamesForEnvFrom:
 - ga-and-mt-web-env
 
 secretData: {}
+  # ACAPY_ADMIN_API_KEY: "adminApiKey"
+  # ACAPY_MULTITENANT_JWT_SECRET: "jwtSecret"
+  # ACAPY_TENANT_AGENT_API_KEY: "adminApiKey"
+  # ACAPY_GOVERNANCE_AGENT_API_KEY: "adminApiKey"
 
 env:
   ACAPY_GOVERNANCE_AGENT_URL: http://governance-ga-agent:3021

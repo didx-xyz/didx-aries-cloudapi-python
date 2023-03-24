@@ -67,7 +67,21 @@ extraSecretNamesForEnvFrom:
   - didx-multitenant-rds-credentials
   - mt-agent-env
 
-secretData: {}
+# Sensitive environment variables are sourced from k8s secrets:
+# - generated with secretData, or
+# - pre-populated with external tooling
+# TODO: Helm secret logic to create new secret if not exist
+secretData{}:
+  # WALLET_DB_HOST: "governance-ga-wallets-db"
+  # WALLET_DB_PORT: "5432"
+  # ACAPY_LABEL: "Alice"
+  # ACAPY_WALLET_NAME: "Alive_name"
+  # ACAPY_WALLET_KEY: "alice_key"
+  # ACAPY_ADMIN_API_KEY: "adminApiKey"
+  # ACAPY_MULTITENANT_JWT_SECRET: "jwtSecret"
+  # ACAPY_TENANT_AGENT_API_KEY: "adminApiKey"
+  # ACAPY_GOVERNANCE_AGENT_API_KEY: "adminApiKey"
+  # ACAPY_WALLET_STORAGE_CONFIG: '{"url":"aries-default-multitenant.ce5tswq1klfu.af-south-1.rds.amazonaws.com:5432","wallet_scheme":"MultiWalletSingleTable"}'
 
 env:
   # for aca-py

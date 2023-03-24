@@ -66,7 +66,22 @@ extraSecretNamesForEnvFrom:
   - didx-rds-credentials
   - ga-agent-env
 
+# Sensitive environment variables are sourced from k8s secrets:
+# - generated with secretData, or
+# - pre-populated with external tooling
+# TODO: Helm secret logic to create new secret if not exist
 secretData: {}
+  # WALLET_DB_HOST: "<redis_cluster>"
+  # WALLET_DB_PORT: "<redis_port>"
+  # ACAPY_LABEL: "Alice"
+  # ACAPY_WALLET_NAME: "Alice_Name"
+  # ACAPY_WALLET_KEY: "alice_key"
+  # ACAPY_WALLET_SEED: "00000000000000000governance1Any1"
+  # ACAPY_ADMIN_API_KEY: "adminApiKey"
+  # ACAPY_MULTITENANT_JWT_SECRET: "jwtSecret"
+  # ACAPY_TENANT_AGENT_API_KEY: "adminApiKey"
+  # ACAPY_GOVERNANCE_AGENT_API_KEY: "adminApiKey"
+  # ACAPY_WALLET_STORAGE_CONFIG: "{"url":"governance-ga-wallets-db:5432","wallet_scheme":"MultiWalletSingleTable"}"
 
 env:
   # for aca-py

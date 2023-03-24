@@ -43,7 +43,8 @@ configFiles:
 autoscaling:
   enabled: false
 
-secretData: {}
+secretData:
+  # REDIS_HOST: ""
 
 extraSecretNamesForEnvFrom:
 - redis-host
