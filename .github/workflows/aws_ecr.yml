@@ -156,7 +156,7 @@ jobs:
         uses: tailscale/github-action@main
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          version: 1.38.1
+          version: 1.38.2
           args: --advertise-tags=tag:cicd
 
       - name: Update deployments
