@@ -90,7 +90,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push Docker images
-        if: github.event.name != 'pull_request_review'
         uses: docker/build-push-action@v4
         with:
           context: ${{ matrix.context }}
@@ -99,7 +98,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=build-${{ matrix.image }}
-          cache-to: type=gha,scope=build-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=build-${{ matrix.image }}
 
   deploy:
     name: Deploy to EKS
