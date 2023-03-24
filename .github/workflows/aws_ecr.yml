@@ -98,6 +98,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=build-${{ matrix.image }}
+          cache-to: type=gha,scope=build-${{ matrix.image }}
 
   deploy:
     name: Deploy to EKS
