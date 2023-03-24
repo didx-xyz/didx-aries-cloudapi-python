@@ -105,7 +105,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting the JWT
-    if: github.event.review.state == 'approved' || github.event_name == 'push'
 
     env:
       projects: |
@@ -124,7 +123,6 @@ jobs:
           repository: didx-xyz/cloud_api_helm
           token: ${{ secrets.HELM_REPO_TOKEN }} # private access token here, for HTTPS clones
           path: helm/Chart
-          ref: CloudAPI-Environment-Variable-Changes
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -138,8 +136,10 @@ jobs:
         with:
           version: latest
 
-      - name: Install helm secrets plugin
-        run: helm plugin install https://github.com/jkroepke/helm-secrets --version v4.4.2
+      - name: Install helm plugins
+        run: |
+          helm plugin install https://github.com/jkroepke/helm-secrets --version v4.4.2
+          helm plugin install https://github.com/databus23/helm-diff
 
       - name: Setup Go
         uses: actions/setup-go@v4
@@ -159,10 +159,26 @@ jobs:
           version: 1.38.2
           args: --advertise-tags=tag:cicd
 
-      - name: Update deployments
+      - name: Symlink shared models
         run: |
           mkdir -p helm/Chart/assets/shared_models
           ln -s ./shared_models/* ./helm/Chart/assets/shared_models
+
+      - name: Diff upgrade
+        run: |
+          for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
+            helm -n dev-cloudapi \
+              secrets diff upgrade "${project}" \
+              --install \
+              --set image.tag=${{ needs.build.outputs.image_version }} \
+              -f ./helm/Chart/values/dev/${project}.yaml \
+              -f ./helm/Chart/secrets/dev/${project}.yaml \
+              ./helm/Chart
+          done
+
+      - name: Update deployments
+        if: github.event.review.state == 'approved'
+        run: |
           for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
             helm -n dev-cloudapi \
               secrets upgrade "${project}" \
