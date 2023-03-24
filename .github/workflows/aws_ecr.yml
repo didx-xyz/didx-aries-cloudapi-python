@@ -106,6 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting the JWT
+    concurrency: dev-cloudapi # Only one EKS deployment at a time
 
     env:
       projects: |
