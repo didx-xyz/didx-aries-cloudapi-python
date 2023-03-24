@@ -4,24 +4,37 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'development'
+      - "development"
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
     branches:
-      - 'development'
+      - "development"
+  pull_request_review:
+    types: [submitted]
 
 jobs:
-  deploy:
+  build:
     name: Build image and push to ECR
     runs-on: ubuntu-latest
 
+    outputs:
+      image_version: ${{ steps.meta.outputs.version }}
+
     strategy:
       matrix:
+        image:
+          [
+            governance-ga-agent,
+            governance-trust-registry,
+            governance-multitenant-web,
+            governance-webhooks-web,
+            governance-multitenant-agent,
+            ledger-browser,
+            ledger-nodes,
+            governance-endorser,
+          ]
         include:
-          - image: governance-ga-web
-            context: .
-            file: dockerfiles/fastapi/Dockerfile
           - image: governance-ga-agent
             context: .
             file: dockerfiles/agents/Dockerfile.agent
@@ -52,7 +65,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -84,3 +97,99 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=build-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=build-${{ matrix.image }}
+
+  deploy:
+    name: Deploy to EKS
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # This is required for requesting the JWT
+    concurrency: dev-cloudapi # Only one EKS deployment at a time
+
+    env:
+      projects: |
+        governance-ga-agent
+        governance-multitenant-agent
+        governance-multitenant-web
+        governance-trust-registry
+        governance-webhooks-web
+        governance-endorser
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Checkout Helm chart
+        uses: actions/checkout@v3
+        with:
+          repository: didx-xyz/cloud_api_helm
+          token: ${{ secrets.HELM_REPO_TOKEN }} # private access token here, for HTTPS clones
+          path: helm/Chart
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: af-south-1
+          role-to-assume: arn:aws:iam::402177810328:role/cicd
+          role-session-name: github-cicd
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: latest
+
+      - name: Install helm plugins
+        run: |
+          helm plugin install https://github.com/jkroepke/helm-secrets --version v4.4.2
+          helm plugin install https://github.com/databus23/helm-diff
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+
+      - name: Install sops
+        run: |
+          go install go.mozilla.org/sops/v3/cmd/sops@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Update Kubeconfig
+        run: aws eks update-kubeconfig --name cloudapi-dev
+
+      - name: Tailscale
+        uses: tailscale/github-action@main
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          version: 1.38.2
+          args: --advertise-tags=tag:cicd
+
+      - name: Symlink shared models
+        run: |
+          mkdir -p helm/Chart/assets
+          cd helm/Chart/assets
+          ln -s ../../../shared_models .
+
+      - name: Diff upgrade
+        run: |
+          for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
+            helm -n dev-cloudapi \
+              secrets diff upgrade "${project}" \
+              --install \
+              --set image.tag=${{ needs.build.outputs.image_version }} \
+              -f ./helm/Chart/values/dev/${project}.yaml \
+              -f ./helm/Chart/secrets/dev/${project}.yaml \
+              ./helm/Chart
+          done
+
+      - name: Update deployments
+        if: github.event.review.state == 'approved'
+        run: |
+          for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
+            helm -n dev-cloudapi \
+              secrets upgrade "${project}" \
+              --install \
+              --atomic \
+              --timeout=300s \
+              --set image.tag=${{ needs.build.outputs.image_version }} \
+              -f ./helm/Chart/values/dev/${project}.yaml \
+              -f ./helm/Chart/secrets/dev/${project}.yaml \
+              ./helm/Chart
+          done
