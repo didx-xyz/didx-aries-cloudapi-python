@@ -10,7 +10,6 @@ on:
   pull_request:
     branches:
       - "development"
-      - "feature/DIDX-121-dockerfile-cmd-and-entrypoint-config"
   pull_request_review:
     types: [submitted]
 
@@ -162,6 +161,8 @@ jobs:
 
       - name: Update deployments
         run: |
+          mkdir -p helm/Chart/assets/shared_models
+          ln -s ./shared_models/* ./helm/Chart/assets/shared_models
           for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
             helm -n dev-cloudapi \
               secrets upgrade "${project}" \
