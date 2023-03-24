@@ -10,6 +10,14 @@ image:
 ingress:
   internal:
     enabled: false
+    className: nginx-internal
+    annotations:
+      nginx.ingress.kubernetes.io/service-upstream: "true"
+    hosts:
+      - host: webhooks.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 3010
   external:
     enabled: false
 

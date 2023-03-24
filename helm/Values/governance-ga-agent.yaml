@@ -34,6 +34,16 @@ ingress:
         paths:
           - path: /
             port: 3020
+  internal-e2e:
+    enabled: false
+    className: nginx-internal
+    annotations:
+      nginx.ingress.kubernetes.io/service-upstream: "true"
+    hosts:
+      - host: governance-ga-agent.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 3021
 
 service:
   # if set, will run Pods on Node Network

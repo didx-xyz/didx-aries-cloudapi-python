@@ -35,6 +35,16 @@ ingress:
       paths:
       - path: /
         port: 4020
+  internal-e2e:
+    enabled: false
+    className: nginx-internal
+    annotations:
+      nginx.ingress.kubernetes.io/service-upstream: "true"
+    hosts:
+      - host: governance-mt-agent.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 4021
 
 service:
   # if set, will run Pods on Node Network

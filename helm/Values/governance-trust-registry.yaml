@@ -13,8 +13,14 @@ image:
 ingress:
   internal:
     enabled: false
-  external:
-    enabled: false
+    className: nginx-internal
+    annotations:
+      nginx.ingress.kubernetes.io/service-upstream: "true"
+    hosts:
+      - host: trust-registry.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 8001
 
 service:
   # if set, will run Pods on Node Network
