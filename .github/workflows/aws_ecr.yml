@@ -175,7 +175,7 @@ jobs:
               secrets diff upgrade "${project}" \
               --install \
               --set image.tag=${{ needs.build.outputs.image_version }} \
-              -f ./helm/Chart/values/dev/${project}.yaml \
+              -f ./helm/Values/${project}.yaml \
               -f ./helm/Chart/secrets/dev/${project}.yaml \
               ./helm/Chart
           done
@@ -190,7 +190,7 @@ jobs:
               --atomic \
               --timeout=300s \
               --set image.tag=${{ needs.build.outputs.image_version }} \
-              -f ./helm/Chart/values/dev/${project}.yaml \
+              -f ./helm/Values/${project}.yaml \
               -f ./helm/Chart/secrets/dev/${project}.yaml \
               ./helm/Chart
           done
