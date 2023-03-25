@@ -2,6 +2,11 @@ name: Deploy to ECR
 
 on:
   workflow_dispatch:
+    inputs:
+      run-update-deployments:
+        description: 'Run Update Deployments step manually'
+        required: false
+        default: 'false'
   push:
     branches:
       - "development"
@@ -181,7 +186,7 @@ jobs:
           done
 
       - name: Update deployments
-        if: github.event.review.state == 'approved'
+        if: github.event.review.state == 'approved' || github.event.inputs.run-update-deployments == 'true'
         run: |
           for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
             helm -n dev-cloudapi \
