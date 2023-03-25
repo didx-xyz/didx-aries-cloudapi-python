@@ -63,7 +63,7 @@ addPorts:
 command:
   - "bash"
   - "-c"
-  - "export DOCKERHOST=${MY_POD_IP}; ./scripts/start_nodes.sh"
+  - "export DOCKERHOST=ledger-nodes; ./scripts/start_nodes.sh"
 
 extraContainers:
   - name: ledger-browser
@@ -73,7 +73,7 @@ extraContainers:
     command:
       - "bash"
       - "-c"
-      - "sleep 60; export DOCKERHOST=${MY_POD_IP}; ./scripts/start_webserver.sh"
+      - "sleep 60; export DOCKERHOST=ledger-nodes; ./scripts/start_webserver.sh"
     port: 8000
 
 env:
