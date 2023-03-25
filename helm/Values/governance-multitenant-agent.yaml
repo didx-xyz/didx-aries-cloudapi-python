@@ -21,20 +21,20 @@ ingress:
     annotations:
       nginx.ingress.kubernetes.io/service-upstream: "true"
     hosts:
-    - host: mt-agent.cloudapi.dev.didxtech.com
-      paths:
-      - path: /
-        port: 4020
+      - host: mt-agent.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 4020
   external:
     enabled: true
     className: nginx-external
     annotations:
       nginx.ingress.kubernetes.io/service-upstream: "true"
     hosts:
-    - host: mt-agent.cloudapi.dev.didxtech.com
-      paths:
-      - path: /
-        port: 4020
+      - host: mt-agent.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 4020
   internal-e2e:
     enabled: false
     className: nginx-internal

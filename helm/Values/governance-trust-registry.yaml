@@ -29,7 +29,8 @@ service:
   port: 8001
   containerPort: 8001
 
-httpProbes: {}
+httpProbes:
+  {}
   # liveness:
   #   path: /
   # readiness:

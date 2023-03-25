@@ -14,10 +14,10 @@ ingress:
     annotations:
       nginx.ingress.kubernetes.io/service-upstream: "true"
     hosts:
-    - host: ledger-browser.cloudapi.dev.didxtech.com
-      paths:
-      - path: /
-        port: 9000
+      - host: ledger-browser.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 9000
   external:
     enabled: false
 
@@ -67,7 +67,7 @@ command:
 
 extraContainers:
   - name: ledger-browser
-    image: 
+    image:
       repository: "324190738845.dkr.ecr.af-south-1.amazonaws.com/ledger-browser"
       tag: "pr-8"
     command:
