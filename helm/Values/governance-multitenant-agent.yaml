@@ -111,7 +111,7 @@ env:
   ACAPY_LOG_LEVEL: debug
   ACAPY_AUTO_PROVISION: true
   # Ledger
-  ACAPY_GENESIS_URL: https://raw.githubusercontent.com/Indicio-tech/indicio-network/main/genesis_files/pool_transactions_testnet_genesis
+  ACAPY_GENESIS_URL: http://ledger-nodes:9000/genesis
   # Multi-tenant Configuration
   ACAPY_MULTITENANT: true
   ACAPY_MULTITENANT_ADMIN: false

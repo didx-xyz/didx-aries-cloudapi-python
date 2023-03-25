@@ -116,6 +116,7 @@ jobs:
         governance-trust-registry
         governance-webhooks-web
         governance-endorser
+        ledger-nodes
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
