@@ -186,7 +186,7 @@ jobs:
           done
 
       - name: Update deployments
-        if: github.event.review.state == 'approved' || github.event.inputs.run-update-deployments == 'true'
+        if: github.event.review.state == 'approved' || github.event_name == 'push' || github.event.inputs.run-update-deployments == 'true'
         run: |
           for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
             helm -n dev-cloudapi \
