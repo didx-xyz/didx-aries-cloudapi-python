@@ -28,12 +28,13 @@ service:
   port: 3010
   containerPort: 3010
 
-httpProbes: {}
- # liveness:
- #   path: /
- # readiness:
- #   path: /
- # initialDelaySeconds: 2
+httpProbes:
+  {}
+  # liveness:
+  #   path: /
+  # readiness:
+  #   path: /
+  # initialDelaySeconds: 2
 
 persistence:
   enabled: false
@@ -55,7 +56,7 @@ secretData:
   # REDIS_HOST: ""
 
 extraSecretNamesForEnvFrom:
-- redis-host
+  - redis-host
 
 env:
   ACAPY_WEBHOOK_PORT: 3010

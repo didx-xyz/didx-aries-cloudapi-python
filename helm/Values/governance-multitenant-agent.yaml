@@ -21,20 +21,20 @@ ingress:
     annotations:
       nginx.ingress.kubernetes.io/service-upstream: "true"
     hosts:
-    - host: mt-agent.cloudapi.dev.didxtech.com
-      paths:
-      - path: /
-        port: 4020
+      - host: mt-agent.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 4020
   external:
     enabled: true
     className: nginx-external
     annotations:
       nginx.ingress.kubernetes.io/service-upstream: "true"
     hosts:
-    - host: mt-agent.cloudapi.dev.didxtech.com
-      paths:
-      - path: /
-        port: 4020
+      - host: mt-agent.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 4020
   internal-e2e:
     enabled: false
     className: nginx-internal
@@ -111,7 +111,7 @@ env:
   ACAPY_LOG_LEVEL: debug
   ACAPY_AUTO_PROVISION: true
   # Ledger
-  ACAPY_GENESIS_URL: https://raw.githubusercontent.com/Indicio-tech/indicio-network/main/genesis_files/pool_transactions_testnet_genesis
+  ACAPY_GENESIS_URL: http://ledger-nodes:9000/genesis
   # Multi-tenant Configuration
   ACAPY_MULTITENANT: true
   ACAPY_MULTITENANT_ADMIN: false

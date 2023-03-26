@@ -2,6 +2,11 @@ name: Deploy to ECR
 
 on:
   workflow_dispatch:
+    inputs:
+      run-update-deployments:
+        description: 'Run Update Deployments step manually'
+        required: false
+        default: 'false'
   push:
     branches:
       - "development"
@@ -116,6 +121,7 @@ jobs:
         governance-trust-registry
         governance-webhooks-web
         governance-endorser
+        ledger-nodes
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -174,13 +180,13 @@ jobs:
               secrets diff upgrade "${project}" \
               --install \
               --set image.tag=${{ needs.build.outputs.image_version }} \
-              -f ./helm/Chart/values/dev/${project}.yaml \
+              -f ./helm/Values/${project}.yaml \
               -f ./helm/Chart/secrets/dev/${project}.yaml \
               ./helm/Chart
           done
 
       - name: Update deployments
-        if: github.event.review.state == 'approved' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: github.event.review.state == 'approved' || github.event_name == 'push' || github.event.inputs.run-update-deployments == 'true'
         run: |
           for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
             helm -n dev-cloudapi \
@@ -189,7 +195,7 @@ jobs:
               --atomic \
               --timeout=300s \
               --set image.tag=${{ needs.build.outputs.image_version }} \
-              -f ./helm/Chart/values/dev/${project}.yaml \
+              -f ./helm/Values/${project}.yaml \
               -f ./helm/Chart/secrets/dev/${project}.yaml \
               ./helm/Chart
           done
