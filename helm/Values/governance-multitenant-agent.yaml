@@ -36,7 +36,7 @@ ingress:
           - path: /
             port: 4020
   internal-e2e:
-    enabled: false
+    enabled: true
     className: nginx-internal
     annotations:
       nginx.ingress.kubernetes.io/service-upstream: "true"

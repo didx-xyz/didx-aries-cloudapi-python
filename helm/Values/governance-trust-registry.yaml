@@ -12,7 +12,7 @@ image:
 
 ingress:
   internal:
-    enabled: false
+    enabled: true
     className: nginx-internal
     annotations:
       nginx.ingress.kubernetes.io/service-upstream: "true"
