@@ -1,0 +1,70 @@
+name: Deploy to ECR
+
+on:
+  workflow_dispatch:
+    inputs:
+      run-test-with-pytest:
+        description: 'Run Test with pytest step manually'
+        required: false
+        default: 'false'
+  push:
+    branches:
+      - "development"
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - "development"
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  test:
+    if: github.event.inputs.run-test-with-pytest == 'true'
+    name: Test with pytest
+    # needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # This is required for requesting the JWT
+    concurrency: dev-cloudapi # Only one test at a time
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: af-south-1
+          role-to-assume: arn:aws:iam::402177810328:role/cicd
+          role-session-name: github-cicd
+
+      - name: Install Helm (for kubectl)
+        uses: azure/setup-helm@v3
+        with:
+          version: latest
+
+      - name: Update Kubeconfig
+        run: aws eks update-kubeconfig --name cloudapi-dev
+
+      - name: Tailscale
+        uses: tailscale/github-action@main
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          version: 1.38.2
+          args: --advertise-tags=tag:cicd
+
+      - name: Set environment variables
+        run: |
+          echo "GOVERNANCE_AGENT_URL=https://governance-ga-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
+          echo "MULTITENANT_AGENT_URLL=https://governance-mt-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
+          echo "TENANT_AGENT_URL=https://governance-mt-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
+          echo "TRUST_REGISTRY_URL=https://trust-registry.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
+          echo "WEBHOOKS_URL=https://webhooks.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
+
+      - name: Test with pytest
+        id: test
+        # if: github.event.review.state == 'approved' || github.event_name == 'push' || github.event.inputs.run-test-with-pytest == 'true'
+        continue-on-error: true
+        run: |
+          pytest  --cov=trustregistry --cov=app trustregistry app
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
+          echo done
+        env:
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
