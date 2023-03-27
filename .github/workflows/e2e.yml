@@ -1,12 +1,11 @@
 name: E2E Test
 
 on:
+  workflow_run:
+    workflows: ["Deploy to ECR"]
+    types: 
+      - completed
   workflow_dispatch:
-    # inputs:
-    #   run-test-with-pytest:
-    #     description: 'Run Test with pytest step manually'
-    #     required: false
-    #     default: 'false'
   push:
     branches:
       - "DIDX-176-test-infra-e2e-pytest"
@@ -19,14 +18,38 @@ on:
     types: [submitted]
 
 jobs:
+  check_artifact:
+    runs-on: ubuntu-latest
+    outputs:
+      update_deployments_completed: ${{ steps.check_artifact.outputs.update_deployments_completed }}
+    steps:
+      - name: Download artifact from First Workflow
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const fs = require("fs");
+            const artifact = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.event.workflow_run.id,
+            });
+
+            const specificStepArtifact = artifact.data.artifacts.find((artifact) => artifact.name === "update-deployments-completed");
+
+            if (specificStepArtifact) {
+              core.setOutput("update_deployments_completed", "true");
+            } else {
+              core.setOutput("update_deployments_completed", "false");
+            }
   test:
-    # if: github.event.inputs.run-test-with-pytest == 'true'
+    needs: check_artifact
+    if: needs.check_artifact.outputs.update_deployments_completed == 'true'
     name: Test with pytest
     # needs: deploy
     runs-on: ubuntu-20.04
     permissions:
       id-token: write # This is required for requesting the JWT
-    # concurrency: dev-cloudapi # Only one test at a time
+    concurrency: dev-cloudapi # Only one test / deployment at a time
     steps:
       - uses: actions/checkout@v3
         with:
