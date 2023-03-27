@@ -71,13 +71,19 @@ jobs:
           echo "TENANT_AGENT_URL=https://governance-mt-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo "TRUST_REGISTRY_URL=https://trust-registry.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo "WEBHOOKS_URL=https://webhooks.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
-
+          echo GOVERNANCE_AGENT_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_GOVERNANCE_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
+          echo TENANT_AGENT_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_TENANT_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
+          echo ACAPY_MULTITENANT_JWT_SECRET=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_MULTITENANT_JWT_SECRET}' | base64 -d) >> $GITHUB_ENV
+          echo "GOVERNANCE_FASTAPI_ENDPOINT=https://cloudapi.dev.didxtech.com" >> $GITHUB_ENV
+          echo GOVERNANCE_ACAPY_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_GOVERNANCE_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
+          echo TENANT_ACAPY_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_TENANT_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
+          echo "LEDGER_REGISTRATION_URL=https://ledger-browser.cloudapi.dev.didxtech.com/register" >> $GITHUB_ENV
       - name: Test with pytest
         id: test
         # if: github.event.inputs.run-test-with-pytest == 'true'
         continue-on-error: true
         run: |
-          pytest  --cov=trustregistry --cov=app trustregistry app
+          pytest  --cov=trustregistry --cov=app app/tests/e2e
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
           echo done
         env:
