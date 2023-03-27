@@ -11,6 +11,10 @@ on:
         description: 'Run test step manually'
         required: false
         default: 'false'
+      run-build:
+        description: 'Run build step manually'
+        required: false
+        default: 'true'
   push:
     branches:
       - "development"
@@ -99,6 +103,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push Docker images
+        if: github.event.inputs.run-build == 'true'
         uses: docker/build-push-action@v4
         with:
           context: ${{ matrix.context }}
@@ -262,24 +267,24 @@ jobs:
           echo "ACAPY_GOVERNANCE_AGENT_URL=https://governance-ga-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo "ACAPY_TENANT_AGENT_URL=https://governance-mt-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo ACAPY_GOVERNANCE_AGENT_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_GOVERNANCE_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
-          echo "::add-mask::$ACAPY_GOVERNANCE_AGENT_API_KEY"
+          #echo "::add-mask::$ACAPY_GOVERNANCE_AGENT_API_KEY"
           echo TENANT_TENANT_AGENT_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_TENANT_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
-          echo "::add-mask::$TENANT_TENANT_AGENT_API_KEY"
+          #echo "::add-mask::$TENANT_TENANT_AGENT_API_KEY"
           echo "TRUST_REGISTRY_URL=https://trust-registry.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
 
           echo "WEBHOOKS_URL=https://webhooks.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
 
           echo ACAPY_MULTITENANT_JWT_SECRET=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_MULTITENANT_JWT_SECRET}' | base64 -d) >> $GITHUB_ENV
-          echo "::add-mask::$ACAPY_MULTITENANT_JWT_SECRET"
+          #echo "::add-mask::$ACAPY_MULTITENANT_JWT_SECRET"
           echo "CLOUDAPI_URL=https://cloudapi.dev.didxtech.com" >> $GITHUB_ENV
 
           # ./app/tests/util/constants.py
           echo "GOVERNANCE_FASTAPI_ENDPOINT=https://cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo GOVERNANCE_ACAPY_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_GOVERNANCE_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
-          echo "::add-mask::$GOVERNANCE_ACAPY_API_KEY"
+          #echo "::add-mask::$GOVERNANCE_ACAPY_API_KEY"
           echo "TENANT_FASTAPI_ENDPOINT=https://cloudapi.dev.didxtech.com"  >> $GITHUB_ENV
           echo TENANT_ACAPY_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_TENANT_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
-          echo "::add-mask::$TENANT_ACAPY_API_KEY"
+          #echo "::add-mask::$TENANT_ACAPY_API_KEY"
           echo "LEDGER_REGISTRATION_URL=https://ledger-browser.cloudapi.dev.didxtech.com/register" >> $GITHUB_ENV
           echo "WEBHOOKS_URL=https://webhooks.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
       - name: Test with pytest
