@@ -25,7 +25,7 @@ ingress:
           - path: /
             port: 3020
   external:
-    enabled: true
+    enabled: false
     className: nginx-external
     annotations:
       nginx.ingress.kubernetes.io/service-upstream: "true"

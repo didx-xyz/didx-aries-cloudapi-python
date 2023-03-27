@@ -231,8 +231,8 @@ jobs:
 
       - name: Set up Python 3.8.10
         uses: actions/setup-python@v4
-        # with:
-        #   python-version: "3.8.10"
+        with:
+          python-version: "3.8.10"
 
       - name: Install test dependencies.
         run: |
@@ -263,28 +263,24 @@ jobs:
 
       - name: Set environment variables
         run: |
+          # TODO: set encrypted secrets programatically with terraform
           # ./app/constants.py
           echo "ACAPY_GOVERNANCE_AGENT_URL=https://governance-ga-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo "ACAPY_TENANT_AGENT_URL=https://governance-mt-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo ACAPY_GOVERNANCE_AGENT_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_GOVERNANCE_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
-          #echo "::add-mask::$ACAPY_GOVERNANCE_AGENT_API_KEY"
           echo TENANT_TENANT_AGENT_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_TENANT_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
-          #echo "::add-mask::$TENANT_TENANT_AGENT_API_KEY"
           echo "TRUST_REGISTRY_URL=https://trust-registry.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
 
           echo "WEBHOOKS_URL=https://webhooks.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
 
           echo ACAPY_MULTITENANT_JWT_SECRET=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_MULTITENANT_JWT_SECRET}' | base64 -d) >> $GITHUB_ENV
-          #echo "::add-mask::$ACAPY_MULTITENANT_JWT_SECRET"
           echo "CLOUDAPI_URL=https://cloudapi.dev.didxtech.com" >> $GITHUB_ENV
 
           # ./app/tests/util/constants.py
           echo "GOVERNANCE_FASTAPI_ENDPOINT=https://cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo GOVERNANCE_ACAPY_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_GOVERNANCE_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
-          #echo "::add-mask::$GOVERNANCE_ACAPY_API_KEY"
           echo "TENANT_FASTAPI_ENDPOINT=https://cloudapi.dev.didxtech.com"  >> $GITHUB_ENV
           echo TENANT_ACAPY_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_TENANT_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
-          #echo "::add-mask::$TENANT_ACAPY_API_KEY"
           echo "LEDGER_REGISTRATION_URL=https://ledger-browser.cloudapi.dev.didxtech.com/register" >> $GITHUB_ENV
           echo "WEBHOOKS_URL=https://webhooks.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
       - name: Test with pytest
@@ -297,11 +293,3 @@ jobs:
           echo done
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
-
-      # - name: Create artifact for specific step
-      #   if: always() && steps.update_deployments.outcome == 'success'
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: update-deployments-completed
-      #     path: |
-      #       .update-deployments-completed

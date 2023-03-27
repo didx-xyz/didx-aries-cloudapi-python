@@ -24,8 +24,6 @@ async def test_create_invitation(
     assert_that(invitation["invitation_url"]).matches(r"^https?://")
 
 
-
-
 @pytest.mark.asyncio
 async def test_accept_invitation(
     bob_member_client: AsyncClient,
