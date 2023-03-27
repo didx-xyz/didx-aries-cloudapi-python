@@ -10,3 +10,5 @@ LEDGER_REGISTRATION_URL = os.getenv("LEDGER_REGISTRATION_URL", "http://localhost
 LEDGER_TYPE: str = "von"
 
 WEBHOOKS_URL = os.getenv("WEBHOOKS_URL", "http://localhost:3010")
+
+CLOUDAPI_URL = os.getenv("CLOUDAPI_URL", "http://localhost:8000")
