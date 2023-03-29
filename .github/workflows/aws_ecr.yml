@@ -11,10 +11,10 @@ on:
         description: 'Run test step manually'
         required: false
         default: 'false'
-      run-build:
-        description: 'Run build step manually'
-        required: false
-        default: 'true'
+      # run-build:
+      #   description: 'Run build step manually'
+      #   required: false
+      #   default: 'true'
   push:
     branches:
       - "development"
@@ -103,7 +103,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push Docker images
-        if: github.event.inputs.run-build == 'true'
+        # if: github.event.inputs.run-build == 'true'
         uses: docker/build-push-action@v4
         with:
           context: ${{ matrix.context }}
@@ -125,13 +125,13 @@ jobs:
       output: ${{ steps.updated_deployments.outputs.success }}
     env:
       projects: |
+        ledger-nodes
         governance-ga-agent
         governance-multitenant-agent
         governance-multitenant-web
         governance-trust-registry
         governance-webhooks-web
         governance-endorser
-        ledger-nodes
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -194,6 +194,28 @@ jobs:
               -f ./helm/Chart/secrets/dev/${project}.yaml \
               ./helm/Chart
           done
+
+      - name: Destroy deployments
+        id: destroy_deployments
+        if: github.event.review.state == 'approved' || github.event_name == 'push' || github.event.inputs.run-update-deployments == 'true'
+        continue-on-error: true
+        run: |
+          for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
+            helm -n dev-cloudapi delete ${project} || true
+          done
+
+      - name: Drop DBs
+        id: drop_dbs
+        if: github.event.review.state == 'approved' || github.event_name == 'push' || github.event.inputs.run-update-deployments == 'true'
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER}}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_EXCLUDE: ${{ secrets.DB_EXCLUDE }}
+        run: |
+          bash ./scripts/aurora-delete.sh -o didx -d
+          bash ./scripts/aurora-delete.sh -o didx_multitenant -d
 
       - name: Update deployments
         id: update_deployments
