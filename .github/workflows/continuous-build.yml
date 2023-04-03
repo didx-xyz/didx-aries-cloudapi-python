@@ -56,20 +56,16 @@ jobs:
         if: always()
         run: |
           docker ps
-          docker logs governance-ga-agent
-          docker logs governance-multitenant-agent
-          docker logs ledger-nodes
-          docker logs ledger-browser
         shell: bash
       - name: Test with pytest
         id: test
         continue-on-error: true
         run: |
-          pytest -v --cov=trustregistry --cov=app trustregistry app
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
+          pytest --cov=trustregistry --cov=app trustregistry app
+          # bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
           echo done
-        env:
-          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
+        # env:
+          # CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
       - name: Retry tests
         if: steps.test.outcome=='failure' # check the step outcome, retry 1st time
         run: |
