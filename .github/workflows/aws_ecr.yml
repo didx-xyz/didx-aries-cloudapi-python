@@ -26,6 +26,10 @@ on:
   pull_request_review:
     types: [submitted]
 
+concurrency:
+  group: deploy-to-ecr
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build image and push to ECR
@@ -120,7 +124,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting the JWT
-    concurrency: dev-cloudapi # Only one EKS deployment at a time
+    # concurrency: dev-cloudapi # Only one EKS deployment at a time
     outputs:
       output: ${{ steps.updated_deployments.outputs.success }}
     env:
@@ -245,7 +249,7 @@ jobs:
     runs-on: ubuntu-20.04
     permissions:
       id-token: write # This is required for requesting the JWT
-    concurrency: dev-cloudapi # Only one test / deployment at a time
+    # concurrency: dev-cloudapi # Only one test / deployment at a time
     steps:
       - uses: actions/checkout@v3
         with:
