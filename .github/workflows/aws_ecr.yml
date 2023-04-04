@@ -241,6 +241,8 @@ jobs:
               -f ./helm/Secrets/${project}.yaml \
               ./helm/Chart
           done
+          # TODO: there is an istio bug
+          kubectl -n dev-cloudapi rollout restart deploy governance-multitenant-web
 
       - name: Output
         id: updated_deployments
