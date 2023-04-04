@@ -42,13 +42,13 @@ jobs:
       matrix:
         image:
           [
+            ledger-nodes,
+            ledger-browser,
             governance-ga-agent,
             governance-trust-registry,
             governance-multitenant-web,
             governance-webhooks-web,
             governance-multitenant-agent,
-            ledger-browser,
-            ledger-nodes,
             governance-endorser,
           ]
         include:
@@ -130,6 +130,7 @@ jobs:
     env:
       projects: |
         ledger-nodes
+        ledger-browser
         governance-ga-agent
         governance-multitenant-agent
         governance-multitenant-web
@@ -181,7 +182,7 @@ jobs:
           version: 1.38.2
           args: --advertise-tags=tag:cicd
 
-      - name: Symlink shared models & indy_healthcheck.sh
+      - name: Symlink shared models
         run: |
           mkdir -p helm/Chart/assets
           cd helm/Chart/assets
@@ -244,7 +245,7 @@ jobs:
 
   test:
     needs: deploy
-    if: ${{ needs.deploy.outputs.output }} == 'success=true' || github.event.inputs.run-test == 'true'
+    if: needs.deploy.outputs.output == 'true' || github.event.inputs.run-tests == 'true'
     name: Test with pytest
     runs-on: ubuntu-20.04
     permissions:
@@ -317,5 +318,5 @@ jobs:
           #pytest -v -k test_create_invitation
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
           echo done
-        env:
-          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
+        # env:
+        #   CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
