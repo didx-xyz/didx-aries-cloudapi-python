@@ -181,7 +181,7 @@ jobs:
           version: 1.38.2
           args: --advertise-tags=tag:cicd
 
-      - name: Symlink shared models
+      - name: Symlink shared models & indy_healthcheck.sh
         run: |
           mkdir -p helm/Chart/assets
           cd helm/Chart/assets
@@ -195,7 +195,7 @@ jobs:
               --install \
               --set image.tag=${{ needs.build.outputs.image_version }} \
               -f ./helm/Values/${project}.yaml \
-              -f ./helm/Chart/secrets/dev/${project}.yaml \
+              -f ./helm/Secrets/${project}.yaml \
               ./helm/Chart
           done
 
@@ -233,7 +233,7 @@ jobs:
               --timeout=300s \
               --set image.tag=${{ needs.build.outputs.image_version }} \
               -f ./helm/Values/${project}.yaml \
-              -f ./helm/Chart/secrets/dev/${project}.yaml \
+              -f ./helm/Secrets/${project}.yaml \
               ./helm/Chart
           done
 
