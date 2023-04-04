@@ -44,6 +44,7 @@ jobs:
           [
             ledger-nodes,
             ledger-browser,
+            tails-server,
             governance-ga-agent,
             governance-trust-registry,
             governance-multitenant-web,
@@ -76,6 +77,9 @@ jobs:
           - image: governance-endorser
             context: .
             file: dockerfiles/endorser/Dockerfile
+          - image: tails-server
+            context: https://github.com/bcgov/indy-tails-server.git#v1.0.0
+            file: docker/Dockerfile.tails-server
 
     steps:
       - name: Check out code
