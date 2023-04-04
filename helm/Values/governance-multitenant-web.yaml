@@ -27,6 +27,41 @@ httpProbes:
   #   path: /
   # initialDelaySeconds: 2
 
+initContainers:
+  - name: wait-governance-ga-agent
+    image: busybox
+    env:
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+    command:
+      - sh
+      - -c
+      - |
+        apk add --no-cache busybox-extras
+        until echo exit | telnet governance-ga-agent.$(MY_POD_NAMESPACE).svc.cluster.local 3021; do
+          echo "waiting for governance-ga-agent to be healthy"
+          sleep 2
+        done
+initContainers:
+  - name: wait-governance-multitenant-agent
+    image: busybox
+    env:
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+    command:
+      - sh
+      - -c
+      - |
+        apk add --no-cache busybox-extras
+        until echo exit | telnet governance-multitenant-agent.$(MY_POD_NAMESPACE).svc.cluster.local 4021; do
+          echo "waiting for governance-multitenant-agent to be healthy"
+          sleep 2
+        done
+
 persistence:
   enabled: false
 
