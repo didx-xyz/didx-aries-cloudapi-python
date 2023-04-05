@@ -6,7 +6,7 @@ strategy:
   type: Recreate
 
 image:
-  repository: "ghcr.io/bcgov/tails-server"
+  repository: "324190738845.dkr.ecr.af-south-1.amazonaws.com/tails-server"
   pullPolicy: Always
   tag: "1.0.0"
 
