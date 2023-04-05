@@ -208,5 +208,5 @@ async def test_tenant_admin_agent():
         auth=AcaPyAuth(role=Role.TENANT_ADMIN, token=TENANT_ACAPY_API_KEY)
     ) as c:
         assert isinstance(c, AcaPyClient)
-        assert c.client.headers["x-api-key"] == "adminApiKey"
+        assert c.client.headers["x-api-key"] == TENANT_ACAPY_API_KEY
         assert "Authorization" not in c.client.headers
