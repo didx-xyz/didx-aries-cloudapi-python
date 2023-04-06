@@ -18,6 +18,7 @@ service:
   hostNetwork: false
   port: 8100
   containerPort: 8000
+  appProtocol: https
 
 httpProbes:
   {}
