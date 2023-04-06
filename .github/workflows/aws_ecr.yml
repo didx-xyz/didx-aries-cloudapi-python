@@ -228,8 +228,9 @@ jobs:
         continue-on-error: true
         run: |
           for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
-            helm -n dev-cloudapi delete ${project} || true
+            helm -n dev-cloudapi delete ${project} || true &
           done
+          wait
 
       - name: Drop DBs
         id: drop_dbs
@@ -257,8 +258,9 @@ jobs:
               --set image.tag=${{ needs.build.outputs.image_version }} \
               -f ./helm/Values/${project}.yaml \
               -f ./helm/Secrets/${project}.yaml \
-              ./helm/Chart
+              ./helm/Chart &
           done
+          wait
           # TODO: there is an istio bug
           kubectl -n dev-cloudapi rollout restart deploy governance-multitenant-web
 
@@ -268,7 +270,7 @@ jobs:
         run: echo "output=true" >> "$GITHUB_OUTPUT"
 
   test:
-    # needs: deploy
+    needs: deploy
     if: needs.deploy.outputs.output == 'true' || github.event.inputs.run-tests == 'true'
     name: Test with pytest
     runs-on: ubuntu-20.04
