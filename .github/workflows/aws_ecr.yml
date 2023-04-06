@@ -184,11 +184,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       
+      - name: Install sops dependencies
+        if: steps.go-cache.outputs.cache-hit != 'true'
+        run: |
+          go get go.mozilla.org/sops/v3/cmd/sops@latest
+
       - name: Install sops
         run: |
-          if [ "${{ steps.go-cache.outputs.cache-hit }}" != "true" ]; then
-            go install go.mozilla.org/sops/v3/cmd/sops@latest
-          fi
+          go install go.mozilla.org/sops/v3/cmd/sops@latest
           echo "$HOME/go/bin" >> $GITHUB_PATH
 
       - name: Update Kubeconfig
@@ -262,7 +265,7 @@ jobs:
       - name: Output
         id: updated_deployments
         if: steps.update_deployments.outcome == 'success'
-        run: echo "success=true" >> "$GITHUB_OUTPUT"
+        run: echo "output=true" >> "$GITHUB_OUTPUT"
 
   test:
     # needs: deploy
@@ -335,8 +338,8 @@ jobs:
         id: test
         run: |
           source ./scripts/env.sh
-          # pytest --cov=trustregistry --cov=app trustregistry app
-          pytest -v app/tests/e2e/test_verifier.py
+          pytest -v --cov=trustregistry --cov=app trustregistry app
+          # pytest -v app/tests/e2e/test_verifier.py
           # bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
           # echo done
         # env:
