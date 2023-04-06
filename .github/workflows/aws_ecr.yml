@@ -301,7 +301,7 @@ jobs:
           echo "ACAPY_GOVERNANCE_AGENT_URL=https://governance-ga-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo "ACAPY_TENANT_AGENT_URL=https://governance-mt-agent.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
           echo ACAPY_GOVERNANCE_AGENT_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_GOVERNANCE_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
-          echo TENANT_TENANT_AGENT_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_TENANT_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
+          echo ACAPY_TENANT_AGENT_API_KEY=$(kubectl -n dev-cloudapi get secret ga-and-mt-web-env -o jsonpath='{.data.ACAPY_TENANT_AGENT_API_KEY}' | base64 -d) >> $GITHUB_ENV
           echo "TRUST_REGISTRY_URL=https://trust-registry.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
 
           echo "WEBHOOKS_URL=https://webhooks.cloudapi.dev.didxtech.com" >> $GITHUB_ENV
