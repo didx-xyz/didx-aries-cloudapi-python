@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       run-update-deployments:
-        description: 'Run Update Deployments step manually'
+        description: "Run Update Deployments step manually"
         required: false
-        default: 'false'
+        default: "false"
       run-tests:
-        description: 'Run test step in isolation'
+        description: "Run test step in isolation"
         required: false
-        default: 'false'
+        default: "false"
       # run-build:
       #   description: 'Run build step manually'
       #   required: false
@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.event.inputs.run-tests == 'false'
+    #if: github.event.inputs.run-tests == 'false'
     name: Build image and push to ECR
     runs-on: ubuntu-latest
 
@@ -123,11 +123,47 @@ jobs:
           cache-from: type=gha,scope=build-${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.image }}
 
+  start-runner:
+    permissions:
+      id-token: write # This is required for requesting the JWT
+    name: Start self-hosted EC2 runner
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: af-south-1
+          role-to-assume: arn:aws:iam::402177810328:role/cicd
+          role-session-name: github-cicd
+
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: start
+          github-token: ${{ secrets.PAT }}
+          ec2-image-id: ami-0e77ca258495da48e # ubuntu-jammy-22.04-amd64-server-20230325
+          # ec2-image-id: ami-0d6a50d33e0bddbb0 # amzn2-ami-kernel-5.10-hvm-2.0.20230320.0-x86_64-gp2
+          ec2-instance-type: t3.medium
+          subnet-id: subnet-05db9c395c90d453d
+          security-group-id: sg-09a08ca1220f6f126
+          aws-resource-tags: |
+            [
+              {"Key": "Name", "Value": "github-runner"},
+              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"},
+              {"Key": "Project", "Value": "cloudapi-dev"},
+              {"Key": "ConfigManagement", "Value": "github"}
+            ]
   deploy:
     if: github.event.inputs.run-tests == 'false'
     name: Deploy to EKS
-    needs: build
-    runs-on: ubuntu-latest
+    needs:
+      - start-runner
+      - build
+    runs-on: ${{ needs.start-runner.outputs.label }}
     permissions:
       id-token: write # This is required for requesting the JWT
     # concurrency: dev-cloudapi # Only one EKS deployment at a time
@@ -144,9 +180,20 @@ jobs:
         governance-webhooks-web
         governance-endorser
         tails-server
+      KUBECONFIG: /root/.kube/config
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get upgrade -y
+          apt-get install -y unzip postgresql-client python-is-python3
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          curl -Lo sops.deb https://github.com/mozilla/sops/releases/download/v3.7.3/sops_3.7.3_amd64.deb
+          apt-get --fix-broken install ./sops.deb
+
       - name: Checkout Helm chart
         uses: actions/checkout@v3
         with:
@@ -154,12 +201,35 @@ jobs:
           token: ${{ secrets.HELM_REPO_TOKEN }} # private access token here, for HTTPS clones
           path: helm/Chart
 
+      - name: install-aws-cli
+        uses: unfor19/install-aws-cli-action@v1
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: af-south-1
           role-to-assume: arn:aws:iam::402177810328:role/cicd
           role-session-name: github-cicd
+
+      - name: Update Kubeconfig
+        run: aws eks update-kubeconfig --name cloudapi-dev
+
+      # - name: Add SSH public key to the runner
+      #   env:
+      #     SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+      #   run: |
+      #     echo "Adding SSH public key to the runner"
+      #     mkdir -p ~/.ssh
+      #     echo "$SSH_PUBLIC_KEY" >> ~/.ssh/authorized_keys
+      #     chmod 600 ~/.ssh/authorized_keys
+      #     echo "Public key added successfully"
+
+      - name: Tailscale
+        uses: tailscale/github-action@main
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          version: 1.38.2
+          args: --advertise-tags=tag:cicd
 
       - name: Install Helm
         uses: azure/setup-helm@v3
@@ -170,40 +240,6 @@ jobs:
         run: |
           helm plugin install https://github.com/jkroepke/helm-secrets --version v4.4.2
           helm plugin install https://github.com/databus23/helm-diff
-
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.20
-
-      - name: Cache Go modules
-        uses: actions/cache@v2
-        id: go-cache
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      
-      - name: Install sops dependencies
-        if: steps.go-cache.outputs.cache-hit != 'true'
-        run: |
-          go get go.mozilla.org/sops/v3/cmd/sops@latest
-
-      - name: Install sops
-        run: |
-          go install go.mozilla.org/sops/v3/cmd/sops@latest
-          echo "$HOME/go/bin" >> $GITHUB_PATH
-
-      - name: Update Kubeconfig
-        run: aws eks update-kubeconfig --name cloudapi-dev
-
-      - name: Tailscale
-        uses: tailscale/github-action@main
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          version: 1.38.2
-          args: --advertise-tags=tag:cicd
 
       - name: Symlink shared models
         run: |
@@ -270,34 +306,76 @@ jobs:
         if: steps.update_deployments.outcome == 'success'
         run: echo "success=true" >> "$GITHUB_OUTPUT"
 
+      - name: Install test dependencies
+        run: |
+          apt-get update && apt-get upgrade -y
+          apt-get install -y python-is-python3 build-essential python3-dev
+          python --version
+          curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+          python get-pip.py
+          python -m pip install --upgrade pip
+          pip install -r app/requirements.txt -r requirements.dev.txt -r trustregistry/requirements.txt
+
+      - name: Test with pytest
+        id: test
+        continue-on-error: true
+        run: |
+          kubectl config current-context
+          kubectl version
+          source ./scripts/env.sh
+          pytest --cov=trustregistry --cov=app trustregistry app
+          # pytest -v app/tests/e2e/test_verifier.py
+          # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
+          # bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
+          # echo done
+        # env:
+        #   CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
+
+      - name: Retry tests
+        if: steps.test.outcome=='failure'
+        run: |
+          source ./scripts/env.sh
+          pytest --cov=trustregistry --cov=app trustregistry app
+          # pytest -v app/tests/e2e/test_verifier.py
+          # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
   test:
     # needs: deploy
-    if: needs.deploy.outputs.output == 'true' || github.event.inputs.run-tests == 'true'
+    #if: needs.deploy.outputs.output == 'true' || (github.event.inputs.run-tests == 'true' && github.event.inputs.run-update-deployments == 'false')
+    needs:
+      - start-runner
+      - deploy
+    runs-on: ${{ needs.start-runner.outputs.label }}
     name: Test with pytest
-    runs-on: ubuntu-20.04
     permissions:
       id-token: write # This is required for requesting the JWT
     # concurrency: dev-cloudapi # Only one test / deployment at a time
+    env:
+      KUBECONFIG: /root/.kube/config
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.8.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.8.10"
+      # - name: Set up Python
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: '3.9'
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt', 'requirements.dev.txt', 'trustregistry/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+      # - name: Cache pip dependencies
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/.cache/pip
+      #     key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt', 'requirements.dev.txt', 'trustregistry/requirements.txt') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-pip-
 
       - name: Install test dependencies
         run: |
+          apt-get update && apt-get upgrade -y
+          apt-get install -y python-is-python3 build-essential python3-dev
+          python --version
+          curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+          python get-pip.py
           python -m pip install --upgrade pip
           pip install -r app/requirements.txt -r requirements.dev.txt -r trustregistry/requirements.txt
 
@@ -308,28 +386,30 @@ jobs:
           role-to-assume: arn:aws:iam::402177810328:role/cicd
           role-session-name: github-cicd
 
-      - name: Install Helm (for kubectl)
-        uses: azure/setup-helm@v3
-        with:
-          version: latest
+      # - name: Install Helm (for kubectl)
+      #   uses: azure/setup-helm@v3
+      #   with:
+      #     version: latest
 
-      - name: Update Kubeconfig
-        run: aws eks update-kubeconfig --name cloudapi-dev
+      # - name: Update Kubeconfig
+      #   run: aws eks update-kubeconfig --name cloudapi-dev
 
-      - name: Tailscale
-        uses: tailscale/github-action@main
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          version: 1.38.2
-          args: --advertise-tags=tag:cicd
+      # - name: Tailscale
+      #   uses: tailscale/github-action@main
+      #   with:
+      #     authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      #     version: 1.38.2
+      #     args: --advertise-tags=tag:cicd
       - name: Test with pytest
         id: test
         continue-on-error: true
         run: |
+          kubectl config current-context
+          kubectl version
           source ./scripts/env.sh
-          # pytest --cov=trustregistry --cov=app trustregistry app
+          pytest --cov=trustregistry --cov=app trustregistry app
           # pytest -v app/tests/e2e/test_verifier.py
-          pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
+          # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
           # bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
           # echo done
         # env:
@@ -338,6 +418,31 @@ jobs:
         if: steps.test.outcome=='failure'
         run: |
           source ./scripts/env.sh
-          # pytest --cov=trustregistry --cov=app trustregistry app
+          pytest --cov=trustregistry --cov=app trustregistry app
           # pytest -v app/tests/e2e/test_verifier.py
-          pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
+          # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
+
+  stop-runner:
+    permissions:
+      id-token: write # This is required for requesting the JWT
+    name: Stop self-hosted EC2 runner
+    needs:
+      - start-runner # required to get output from the start-runner job
+      - test
+      - deploy
+    runs-on: ubuntu-latest
+    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: af-south-1
+          role-to-assume: arn:aws:iam::402177810328:role/cicd
+          role-session-name: github-cicd
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: stop
+          github-token: ${{ secrets.PAT }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
