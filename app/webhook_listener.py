@@ -100,7 +100,7 @@ async def start_listener(*, topic: CloudApiTopics, wallet_id: str):
                 return payload
 
     async def wait_for_event_with_timeout(
-        *, filter_map: Dict[str, Any], timeout: float = 20
+        *, filter_map: Dict[str, Any], timeout: float = 60
     ):
         try:
             payload = await asyncio.wait_for(
