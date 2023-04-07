@@ -123,44 +123,11 @@ jobs:
           cache-from: type=gha,scope=build-${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.image }}
 
-  start-runner:
-    name: Start self-hosted EC2 runner
-    runs-on: ubuntu-latest
-    outputs:
-      label: ${{ steps.start-ec2-runner.outputs.label }}
-      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-region: af-south-1
-          role-to-assume: arn:aws:iam::402177810328:role/cicd
-          role-session-name: github-cicd
-
-      - name: Start EC2 runner
-        id: start-ec2-runner
-        uses: machulav/ec2-github-runner@v2
-        with:
-          mode: start
-          github-token: ${{ secrets.PAT }}
-          ec2-image-id: ami-0d6a50d33e0bddbb0 # amzn2-ami-kernel-5.10-hvm-2.0.20230320.0-x86_64-gp2
-          ec2-instance-type: t3.medium
-          subnet-id: subnet-05db9c395c90d453d
-          security-group-id: sg-09a08ca1220f6f126
-          aws-resource-tags: |
-            [
-              {"Key": "Name", "Value": "github-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"},
-              {"Key": "Project", "Value": "cloudapi-dev"},
-              {"Key": "ConfigManagement", "Value": "github"},
-            ]
   deploy:
     if: github.event.inputs.run-tests == 'false'
     name: Deploy to EKS
-    needs:
-      - start-runner
-      - build
-    runs-on: ${{ needs.start-runner.outputs.label }}
+    needs: build
+    runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting the JWT
     # concurrency: dev-cloudapi # Only one EKS deployment at a time
@@ -231,12 +198,12 @@ jobs:
       - name: Update Kubeconfig
         run: aws eks update-kubeconfig --name cloudapi-dev
 
-      # - name: Tailscale
-      #   uses: tailscale/github-action@main
-      #   with:
-      #     authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-      #     version: 1.38.2
-      #     args: --advertise-tags=tag:cicd
+      - name: Tailscale
+        uses: tailscale/github-action@main
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          version: 1.38.2
+          args: --advertise-tags=tag:cicd
 
       - name: Symlink shared models
         run: |
@@ -306,11 +273,8 @@ jobs:
   test:
     # needs: deploy
     if: needs.deploy.outputs.output == 'true' || github.event.inputs.run-tests == 'true'
-    needs:
-      - start-runner
-    runs-on: ${{ needs.start-runner.outputs.label }}
     name: Test with pytest
-    id: test
+    runs-on: ubuntu-20.04
     permissions:
       id-token: write # This is required for requesting the JWT
     # concurrency: dev-cloudapi # Only one test / deployment at a time
@@ -344,20 +308,20 @@ jobs:
           role-to-assume: arn:aws:iam::402177810328:role/cicd
           role-session-name: github-cicd
 
-      # - name: Install Helm (for kubectl)
-      #   uses: azure/setup-helm@v3
-      #   with:
-      #     version: latest
+      - name: Install Helm (for kubectl)
+        uses: azure/setup-helm@v3
+        with:
+          version: latest
 
       - name: Update Kubeconfig
         run: aws eks update-kubeconfig --name cloudapi-dev
 
-      # - name: Tailscale
-      #   uses: tailscale/github-action@main
-      #   with:
-      #     authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-      #     version: 1.38.2
-      #     args: --advertise-tags=tag:cicd
+      - name: Tailscale
+        uses: tailscale/github-action@main
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          version: 1.38.2
+          args: --advertise-tags=tag:cicd
       - name: Test with pytest
         id: test
         continue-on-error: true
@@ -377,26 +341,3 @@ jobs:
           # pytest --cov=trustregistry --cov=app trustregistry app
           # pytest -v app/tests/e2e/test_verifier.py
           pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
-
-  stop-runner:
-      name: Stop self-hosted EC2 runner
-      needs:
-        - start-runner # required to get output from the start-runner job
-        - test
-        - deploy
-      runs-on: ubuntu-latest
-      if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
-      steps:
-        - name: Configure AWS credentials
-          uses: aws-actions/configure-aws-credentials@v2
-          with:
-            aws-region: af-south-1
-            role-to-assume: arn:aws:iam::402177810328:role/cicd
-            role-session-name: github-cicd
-        - name: Stop EC2 runner
-          uses: machulav/ec2-github-runner@v2
-          with:
-            mode: stop
-            github-token: ${{ secrets.PAT }}
-            label: ${{ needs.start-runner.outputs.label }}
-            ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
