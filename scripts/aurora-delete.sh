@@ -102,9 +102,12 @@ drop_db_function() {
     | sed "s/,/','/g" \
     | sed "s/\(.*\)/'\1'/"));")
   for DB in $DB_LIST; do
-    log "Dropping database: $DB"
-    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d postgres -c "DROP DATABASE \"$DB\""
+    (
+      log "Dropping database: $DB"
+      PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d postgres -c "DROP DATABASE \"$DB\""
+    ) &
   done
+  wait
   log "$STEP: done"
   echo ""
 }
