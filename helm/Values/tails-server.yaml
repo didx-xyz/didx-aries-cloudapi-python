@@ -26,9 +26,12 @@ ingress:
 
 args:
   - tails-server
+  - --host
+  - 0.0.0.0
   - --storage-path
   - /tails-server-db
-  - --log-level DEBUG
+  - --log-level
+  - DEBUG
 
 service:
   port: 6543

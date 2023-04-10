@@ -11,10 +11,7 @@ on:
         description: "Run tests step"
         required: false
         default: "true"
-      # run-build:
-      #   description: 'Run build step manually'
-      #   required: false
-      #   default: 'true'
+
   push:
     branches:
       - "development"
@@ -32,7 +29,6 @@ concurrency:
 
 jobs:
   build:
-    #if: github.event.inputs.run-tests == 'false'
     name: Build image and push to ECR
     runs-on: ubuntu-latest
 
@@ -112,7 +108,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push Docker images
-        # if: github.event.inputs.run-build == 'true'
         uses: docker/build-push-action@v4
         with:
           context: ${{ matrix.context }}
@@ -146,10 +141,9 @@ jobs:
           mode: start
           github-token: ${{ secrets.PAT }}
           ec2-image-id: ami-0e77ca258495da48e # ubuntu-jammy-22.04-amd64-server-20230325
-          # ec2-image-id: ami-0d6a50d33e0bddbb0 # amzn2-ami-kernel-5.10-hvm-2.0.20230320.0-x86_64-gp2
           ec2-instance-type: t3.medium
           subnet-id: subnet-05db9c395c90d453d
-          security-group-id: sg-09a08ca1220f6f126
+          security-group-id: sg-0e2beb26798761953 # Tailscale SG
           aws-resource-tags: |
             [
               {"Key": "Name", "Value": "github-runner"},
@@ -158,7 +152,6 @@ jobs:
               {"Key": "ConfigManagement", "Value": "github"}
             ]
   deploy:
-    # if: github.event.inputs.run-tests == 'false'
     name: Deploy to EKS
     needs:
       - start-runner
@@ -166,7 +159,6 @@ jobs:
     runs-on: ${{ needs.start-runner.outputs.label }}
     permissions:
       id-token: write # This is required for requesting the JWT
-    # concurrency: dev-cloudapi # Only one EKS deployment at a time
     outputs:
       output: ${{ steps.updated_deployments.outputs.success }}
     env:
@@ -213,23 +205,6 @@ jobs:
 
       - name: Update Kubeconfig
         run: aws eks update-kubeconfig --name cloudapi-dev
-
-      # - name: Add SSH public key to the runner
-      #   env:
-      #     SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
-      #   run: |
-      #     echo "Adding SSH public key to the runner"
-      #     mkdir -p ~/.ssh
-      #     echo "$SSH_PUBLIC_KEY" >> ~/.ssh/authorized_keys
-      #     chmod 600 ~/.ssh/authorized_keys
-      #     echo "Public key added successfully"
-
-      - name: Tailscale
-        uses: tailscale/github-action@main
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          version: 1.38.2
-          args: --advertise-tags=tag:cicd
 
       - name: Install Helm
         uses: azure/setup-helm@v3
@@ -315,26 +290,12 @@ jobs:
     name: Test with pytest
     permissions:
       id-token: write # This is required for requesting the JWT
-    # concurrency: dev-cloudapi # Only one test / deployment at a time
     env:
       KUBECONFIG: /root/.kube/config
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      # - name: Set up Python
-      #   uses: actions/setup-python@v4
-      #   with:
-      #     python-version: '3.9'
-
-      # - name: Cache pip dependencies
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ~/.cache/pip
-      #     key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt', 'requirements.dev.txt', 'trustregistry/requirements.txt') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-pip-
 
       - name: Install test dependencies
         run: |
@@ -353,20 +314,6 @@ jobs:
           role-to-assume: arn:aws:iam::402177810328:role/cicd
           role-session-name: github-cicd
 
-      # - name: Install Helm (for kubectl)
-      #   uses: azure/setup-helm@v3
-      #   with:
-      #     version: latest
-
-      # - name: Update Kubeconfig
-      #   run: aws eks update-kubeconfig --name cloudapi-dev
-
-      # - name: Tailscale
-      #   uses: tailscale/github-action@main
-      #   with:
-      #     authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-      #     version: 1.38.2
-      #     args: --advertise-tags=tag:cicd
       - name: Test with pytest
         id: test
         continue-on-error: true
