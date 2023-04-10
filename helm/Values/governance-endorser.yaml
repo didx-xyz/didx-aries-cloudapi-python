@@ -26,7 +26,7 @@ extraSecretNamesForEnvFrom:
   - mt-agent-env
 
 env:
-  LOG_LEVEL: debug
+  LOG_LEVEL: info
 
   ACAPY_GOVERNANCE_AGENT_URL: http://governance-ga-agent:3021
   #ACAPY_GOVERNANCE_AGENT_API_KEY: adminApiKey

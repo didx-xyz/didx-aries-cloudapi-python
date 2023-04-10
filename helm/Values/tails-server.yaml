@@ -31,7 +31,7 @@ args:
   - --storage-path
   - ./tails-server-db
   - --log-level
-  - DEBUG
+  - INFO
 
 service:
   port: 6543

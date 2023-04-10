@@ -45,7 +45,6 @@ initContainers:
           echo "waiting for governance-ga-agent to be healthy"
           sleep 2
         done
-initContainers:
   - name: wait-governance-multitenant-agent
     image: busybox
     env:
