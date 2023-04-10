@@ -306,38 +306,6 @@ jobs:
         if: steps.update_deployments.outcome == 'success'
         run: echo "success=true" >> "$GITHUB_OUTPUT"
 
-      # - name: Install test dependencies
-      #   run: |
-      #     apt-get update && apt-get upgrade -y
-      #     apt-get install -y python-is-python3 build-essential python3-dev
-      #     python --version
-      #     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-      #     python get-pip.py
-      #     python -m pip install --upgrade pip
-      #     pip install -r app/requirements.txt -r requirements.dev.txt -r trustregistry/requirements.txt
-
-      # - name: Test with pytest
-      #   id: test
-      #   continue-on-error: true
-      #   run: |
-      #     kubectl config current-context
-      #     kubectl version
-      #     source ./scripts/env.sh
-      #     pytest --cov=trustregistry --cov=app trustregistry app
-      #     # pytest -v app/tests/e2e/test_verifier.py
-      #     # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
-      #     # bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
-      #     # echo done
-      #   # env:
-      #   #   CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
-
-      # - name: Retry tests
-      #   if: steps.test.outcome=='failure'
-      #   run: |
-      #     source ./scripts/env.sh
-      #     pytest --cov=trustregistry --cov=app trustregistry app
-      #     # pytest -v app/tests/e2e/test_verifier.py
-      #     # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
   test:
     if: (needs.deploy.outputs.output == 'true' && github.event.inputs.run-tests != 'false') || github.event.inputs.run-tests == 'true'
     needs:
