@@ -275,7 +275,7 @@ jobs:
           wait
           # TODO: there is an istio bug
           kubectl -n dev-cloudapi rollout restart deploy governance-multitenant-web
-          # TODO: wait for governance-multitenant-web to be restarted
+          kubectl -n dev-cloudapi rollout status deploy governance-multitenant-web
 
       - name: Output
         id: updated_deployments
