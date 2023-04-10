@@ -275,6 +275,7 @@ jobs:
           wait
           # TODO: there is an istio bug
           kubectl -n dev-cloudapi rollout restart deploy governance-multitenant-web
+          # TODO: wait for governance-multitenant-web to be restarted
 
       - name: Output
         id: updated_deployments
@@ -318,10 +319,8 @@ jobs:
         id: test
         continue-on-error: true
         run: |
-          kubectl config current-context
-          kubectl version
           source ./scripts/env.sh
-          pytest --cov=trustregistry --cov=app trustregistry app
+          pytest -x --cov=trustregistry --cov=app trustregistry app
           # pytest -v app/tests/e2e/test_verifier.py
           # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
           # bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
@@ -332,7 +331,7 @@ jobs:
         if: steps.test.outcome=='failure'
         run: |
           source ./scripts/env.sh
-          pytest --cov=trustregistry --cov=app trustregistry app
+          pytest -x --cov=trustregistry --cov=app trustregistry app
           # pytest -v app/tests/e2e/test_verifier.py
           # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
 
