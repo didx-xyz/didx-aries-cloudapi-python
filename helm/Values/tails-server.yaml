@@ -29,7 +29,7 @@ args:
   - --host
   - 0.0.0.0
   - --storage-path
-  - /tails-server-db
+  - ./tails-server-db
   - --log-level
   - DEBUG
 
@@ -40,6 +40,9 @@ service:
 
 persistence:
   enabled: true
-  mountPath: /tails-server-db
+  mountPath: /home/indy/tails-server-db
   capacity: 10Gi
   storageClassName: "gp3"
+
+podSecurityContext:
+  fsGroup: 1001
