@@ -34,12 +34,8 @@ async def test_send_message(
         connection_id=bob_and_alice_connection["alice_connection_id"], content="Donda"
     )
 
-    # debug logging to print the response and URL
-    url = "/generic/messaging/send-message"
-    print(f"Request URL: {alice_member_client.base_url}{url}")  # Print the request URL
-
-    response = await alice_member_client.post(url, json=message.dict())
-
-    print(f"Response content: {response.text}")  # Print the response content
+    response = await alice_member_client.post(
+        "/generic/messaging/send-message", json=message.dict()
+    )
 
     assert_that(response.status_code).is_equal_to(204)

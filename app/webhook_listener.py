@@ -10,8 +10,6 @@ from app.constants import WEBHOOKS_URL
 from shared_models import WEBHOOK_TOPIC_ALL, CloudApiTopics
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(message)s')
-
 
 
 class Webhooks:
@@ -27,8 +25,6 @@ class Webhooks:
 
     @staticmethod
     async def emit(data: Dict[str, Any]):
-        logger.debug(f"Emitting data: {data}")  # Add a debug log
-        print(f"Emitting data: {data}")  # Add a print statement
         [await f(data) for f in Webhooks._listeners]
 
     @staticmethod
@@ -62,8 +58,6 @@ class Webhooks:
 
     @staticmethod
     async def _on_webhook(data: str, topic: str):
-        logger.debug(f"Received webhook data: {data}, topic: {topic}")  # Add a debug log
-        print(f"Received webhook data: {data}, topic: {topic}")  # Add a print statement
         await Webhooks.emit(json.loads(data))
 
     @staticmethod
@@ -85,11 +79,9 @@ async def start_listener(*, topic: CloudApiTopics, wallet_id: str):
     queue = asyncio.Queue()
 
     async def on_webhook(data: Dict[str, Any]):
+        # Do not flood the queue with unnecessary webhook events. We require topic and wallet_id
         if data["topic"] == topic and data["wallet_id"] == wallet_id:
-            logger.debug(f"Putting data into the queue: {data}")  # Add a debug log
-            print(f"Putting data into the queue: {data}")  # Add a print statement
             await queue.put(data)
-            
 
     async def wait_for_event(filter_map: Dict[str, Any]) -> Dict[str, Any]:
         while True:
