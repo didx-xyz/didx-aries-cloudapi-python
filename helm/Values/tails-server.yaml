@@ -10,14 +10,30 @@ image:
   pullPolicy: Always
   tag: "1.0.0"
 
+ingress:
+  internal:
+    enabled: true
+    className: nginx-internal
+    annotations:
+      nginx.ingress.kubernetes.io/service-upstream: "true"
+    hosts:
+      - host: tails-server.cloudapi.dev.didxtech.com
+        paths:
+          - path: /
+            port: 6543
+  external:
+    enabled: false
+
 args:
   - tails-server
   - --storage-path
   - /tails-server-db
+  - --log-level DEBUG
 
 service:
   port: 6543
   containerPort: 6543
+  appProtocol: tcp
 
 persistence:
   enabled: true
