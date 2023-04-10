@@ -8,9 +8,9 @@ on:
         required: false
         default: "false"
       run-tests:
-        description: "Run test step in isolation"
+        description: "Run tests step"
         required: false
-        default: "false"
+        default: "true"
       # run-build:
       #   description: 'Run build step manually'
       #   required: false
@@ -158,7 +158,7 @@ jobs:
               {"Key": "ConfigManagement", "Value": "github"}
             ]
   deploy:
-    if: github.event.inputs.run-tests == 'false'
+    # if: github.event.inputs.run-tests == 'false'
     name: Deploy to EKS
     needs:
       - start-runner
@@ -247,17 +247,17 @@ jobs:
           cd helm/Chart/assets
           ln -s ../../../shared_models .
 
-      # - name: Diff upgrade
-      #   run: |
-      #     for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
-      #       helm -n dev-cloudapi \
-      #         secrets diff upgrade "${project}" \
-      #         --install \
-      #         --set image.tag=${{ needs.build.outputs.image_version }} \
-      #         -f ./helm/Values/${project}.yaml \
-      #         -f ./helm/Secrets/${project}.yaml \
-      #         ./helm/Chart
-      #     done
+      - name: Diff upgrade
+        run: |
+          for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
+            helm -n dev-cloudapi \
+              secrets diff upgrade "${project}" \
+              --install \
+              --set image.tag=${{ needs.build.outputs.image_version }} \
+              -f ./helm/Values/${project}.yaml \
+              -f ./helm/Secrets/${project}.yaml \
+              ./helm/Chart
+          done
 
       - name: Destroy deployments
         id: destroy_deployments
@@ -306,41 +306,40 @@ jobs:
         if: steps.update_deployments.outcome == 'success'
         run: echo "success=true" >> "$GITHUB_OUTPUT"
 
-      - name: Install test dependencies
-        run: |
-          apt-get update && apt-get upgrade -y
-          apt-get install -y python-is-python3 build-essential python3-dev
-          python --version
-          curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-          python get-pip.py
-          python -m pip install --upgrade pip
-          pip install -r app/requirements.txt -r requirements.dev.txt -r trustregistry/requirements.txt
+      # - name: Install test dependencies
+      #   run: |
+      #     apt-get update && apt-get upgrade -y
+      #     apt-get install -y python-is-python3 build-essential python3-dev
+      #     python --version
+      #     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+      #     python get-pip.py
+      #     python -m pip install --upgrade pip
+      #     pip install -r app/requirements.txt -r requirements.dev.txt -r trustregistry/requirements.txt
 
-      - name: Test with pytest
-        id: test
-        continue-on-error: true
-        run: |
-          kubectl config current-context
-          kubectl version
-          source ./scripts/env.sh
-          pytest --cov=trustregistry --cov=app trustregistry app
-          # pytest -v app/tests/e2e/test_verifier.py
-          # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
-          # bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
-          # echo done
-        # env:
-        #   CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
+      # - name: Test with pytest
+      #   id: test
+      #   continue-on-error: true
+      #   run: |
+      #     kubectl config current-context
+      #     kubectl version
+      #     source ./scripts/env.sh
+      #     pytest --cov=trustregistry --cov=app trustregistry app
+      #     # pytest -v app/tests/e2e/test_verifier.py
+      #     # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
+      #     # bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
+      #     # echo done
+      #   # env:
+      #   #   CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }} # Needed for Codacy reporting
 
-      - name: Retry tests
-        if: steps.test.outcome=='failure'
-        run: |
-          source ./scripts/env.sh
-          pytest --cov=trustregistry --cov=app trustregistry app
-          # pytest -v app/tests/e2e/test_verifier.py
-          # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
+      # - name: Retry tests
+      #   if: steps.test.outcome=='failure'
+      #   run: |
+      #     source ./scripts/env.sh
+      #     pytest --cov=trustregistry --cov=app trustregistry app
+      #     # pytest -v app/tests/e2e/test_verifier.py
+      #     # pytest -v app/tests/e2e/test_verifier.py::test_accept_proof_request_v1
   test:
-    # needs: deploy
-    #if: needs.deploy.outputs.output == 'true' || (github.event.inputs.run-tests == 'true' && github.event.inputs.run-update-deployments == 'false')
+    if: (needs.deploy.outputs.output == 'true' && github.event.inputs.run-tests != 'false') || github.event.inputs.run-tests == 'true'
     needs:
       - start-runner
       - deploy
