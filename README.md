@@ -53,6 +53,10 @@ Without using `make` you can run:
 ./manage up
 ```
 
+Install the requirements
+```bash
+pip install -r app/requirements.txt -r requirements.dev.txt -r trustregistry/requirements.txt
+```
 to start the containers and run the tests with
 
 ```bash
@@ -98,3 +102,10 @@ for PROJECT in "${PROJECTS[@]}"; do
     ./helm/Chart/.
 done 
 ```
+
+> NOTE:
+> You can specify the log level of the pytest output by using the `--log-cli-level=DEBUG` flag. For example:
+> ```bash
+> pytest . --log-cli-level=DEBUG
+> ```
+> will output all log messages with a log level of `DEBUG` or higher.
