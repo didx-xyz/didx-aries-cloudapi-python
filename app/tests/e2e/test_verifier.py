@@ -196,13 +196,13 @@ async def test_accept_proof_request_oob_v1(
     )
 
     # Add sleep of 5 seconds to ensure state change of proof response
-    time.sleep(10)
+    time.sleep(5)
 
     assert check_webhook_state(
         client=bob_member_client,
         filter_map={"state": "done", "role": "verifier", "connection_id": None},
         topic="proofs",
-        max_duration=300,
+        max_duration=240,
     )
 
 
