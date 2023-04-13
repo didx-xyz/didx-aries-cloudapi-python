@@ -6,7 +6,7 @@ on:
       run-update-deployments:
         description: "Run Update Deployments step manually"
         required: false
-        default: "false"
+        default: "true"
       run-tests:
         description: "Run tests step"
         required: false
