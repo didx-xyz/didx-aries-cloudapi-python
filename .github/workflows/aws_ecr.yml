@@ -180,7 +180,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update && apt-get upgrade -y
-          apt-get install -y unzip postgresql-client python-is-python3
+          apt-get install -y unzip postgresql-client python-is-python3 redis-tools
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
           curl -Lo sops.deb https://github.com/mozilla/sops/releases/download/v3.7.3/sops_3.7.3_amd64.deb
@@ -257,6 +257,22 @@ jobs:
           bash ./scripts/aurora-delete.sh -o didx -d
           bash ./scripts/aurora-delete.sh -o didx_multitenant -d
 
+      - name: List Elasticache Redis
+        if: github.event.review.state == 'approved' || github.event_name == 'push' || github.event.inputs.run-update-deployments == 'true'
+        env:
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        run: |
+          redis-cli -h $REDIS_HOST -p $REDIS_PORT --scan --pattern '*'
+
+      - name: Clean Elasticache Redis
+        if: github.event.review.state == 'approved' || github.event_name == 'push' || github.event.inputs.run-update-deployments == 'true'
+        env:
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        run: |
+          redis-cli -h $REDIS_HOST -p $REDIS_PORT FLUSHALL
+       
       - name: Update deployments
         id: update_deployments
         if: github.event.review.state == 'approved' || github.event_name == 'push' || github.event.inputs.run-update-deployments == 'true'
