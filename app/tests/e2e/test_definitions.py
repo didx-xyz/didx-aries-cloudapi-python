@@ -164,7 +164,7 @@ async def test_create_credential_definition_issuer_tenant(
     # There is a race condition / timing issue somewhere...
     # Temporary sleep workaround
     # TODO: debug
-    await asyncio.sleep(10)
+    # await asyncio.sleep(10)
 
     credential_definition = CreateCredentialDefinition(
         schema_id=schema_definition.id,
