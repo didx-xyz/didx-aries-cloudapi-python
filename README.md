@@ -23,6 +23,14 @@ Setup the VON network locally that will provide an instance of Hyperledger Indy 
 ### Step 2: Run the Aries Cloud Agent
 > NOTE: Ensure the VON Network is running before starting the Cloud API. The Cloud API will try to connect to the VON Network and will fail if it is not running.
 
+Export the necessary environment variables
+
+```sh
+export ECR_REGISTRY=324190738845.dkr.ecr.af-south-1.amazonaws.com
+# ECR_REGISTRY doesn't need to be valid for `./manage up` or `make start`
+# It is only used when building and pushing via docker-compose
+```
+
 Running it is pretty straight forward - it's all containers. Simply run `./manage up` or `make start` from the root of the project. This should spin up and provision all you need. You can visit [localhost:8000/api/doc](localhost:8000/api/doc) for the swagger docs and start playing about.
 
 If you are familiar with Make you can also have a look in the Makefile to find some handy methods for running the project.
@@ -71,6 +79,40 @@ or only the unit tests with:
 pytest --ignore=app/tests/e2e
 ```
 
+## CI/CD
+
+:warning: WIP
+
+When deploying with `cloud_api_helm`, symlink `./shared_models` dir inside `helm/Chart/assets/shared_models`, e.g.:
+
+```sh
+git clone git@github.com:didx-xyz/cloud_api_helm.git helm/Chart
+mkdir helm/Chart/assets
+cd helm/Chart/assets
+ln -s ../../../shared_models .
+cd ../../../
+```
+
+From the root of this repo:
+
+```sh
+PROJECTS=(
+  governance-ga-agent
+  governance-ga-web
+  governance-multitenant-agent
+  governance-multitenant-web
+  governance-trust-registry
+  governance-webhooks-web
+)
+
+for PROJECT in "${PROJECTS[@]}"; do
+  helm -n app upgrade --install --atomic --timeout=300s \
+    $PROJECT \
+    -f "./helm/Values/$PROJECT.yaml" \
+    ./helm/Chart/.
+done 
+```
+
 > NOTE:
 > You can specify the log level of the pytest output by using the `--log-cli-level=DEBUG` flag. For example:
 > ```bash
@@ -83,4 +125,3 @@ To run specific tests you can specify the path to the test file or the test clas
 ```bash
 pytest app/tests/e2e/test_verifier.py::test_accept_proof_request_oob_v1 --log-cli-level=0
 ```
-
