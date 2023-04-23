@@ -1,4 +1,4 @@
-name: Deploy to ECR
+name: Deploy to ECR Github Runner
 
 # github hosted runner to test latency issues in e2e tests post 0.8.0 upgrade
 
