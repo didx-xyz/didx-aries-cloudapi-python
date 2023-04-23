@@ -217,7 +217,7 @@ jobs:
 
       - name: Install helm plugins
         run: |
-          helm plugin install https://github.com/jkroepke/helm-secrets --version v4.4.2
+          # helm plugin install https://github.com/jkroepke/helm-secrets --version v4.4.2
           helm plugin install https://github.com/databus23/helm-diff
 
       - name: Symlink shared models
@@ -230,11 +230,10 @@ jobs:
         run: |
           for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
             helm -n dev-cloudapi \
-              secrets diff upgrade "${project}" \
+              diff upgrade "${project}" \
               --install \
               --set image.tag=${{ needs.build.outputs.image_version }} \
               -f ./helm/Values/${project}.yaml \
-              -f ./helm/Secrets/${project}.yaml \
               ./helm/Chart
           done
 
@@ -283,13 +282,12 @@ jobs:
         run: |
           for project in $(echo "${{ env.projects }}" | sed 's/\n/ /g'); do
             helm -n dev-cloudapi \
-              secrets upgrade "${project}" \
+              upgrade "${project}" \
               --install \
               --atomic \
               --timeout=300s \
               --set image.tag=${{ needs.build.outputs.image_version }} \
               -f ./helm/Values/${project}.yaml \
-              -f ./helm/Secrets/${project}.yaml \
               ./helm/Chart &
           done
           wait
